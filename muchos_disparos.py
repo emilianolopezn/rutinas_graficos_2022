@@ -21,33 +21,44 @@ velocidad_rotacion_triangulo = 90.0
 window = None
 
 #Bala
-posicion_bala = [0.0,0.0,0.0]
-disparando = False
-angulo_bala = 0.0
+posiciones_bala = [
+                [0.0,0.0,0.0],
+                [0.0,0.0,0.0],
+                [0.0,0.0,0.0]
+                ]
+disparando = [False,False,False]
+angulo_bala = [0.0, 0.0, 0.0]
 velocidad_bala = 0.75
 
 tiempo_anterior = 0.0
 
+estado_anterior_espacio = glfw.RELEASE
+
 def actualizar_bala(tiempo_delta):
     global disparando
-    if disparando:
-        cantidad_movimiento = velocidad_bala * tiempo_delta
-        posicion_bala[0] = posicion_bala[0] + (
-            math.cos(angulo_bala * pi / 180.0) * cantidad_movimiento
-        )
-        posicion_bala[1] = posicion_bala[1] + (
-            math.sin(angulo_bala * pi / 180.0) * cantidad_movimiento
-        )
-        #checar si está chocando contra enemigos
-        if (posicion_bala[0] > 1 or posicion_bala[0] < -1 or 
-            posicion_bala[1] > 1 or posicion_bala[1] < -1):
-            disparando = False
+    for i in range(3):
+        if disparando[i]:
+            cantidad_movimiento = velocidad_bala * tiempo_delta
+            posiciones_bala[i][0] = posiciones_bala[i][0] + (
+                math.cos(angulo_bala[i] * pi / 180.0) * cantidad_movimiento
+            )
+            posiciones_bala[i][1] = posiciones_bala[i][1] + (
+                math.sin(angulo_bala[i] * pi / 180.0) * cantidad_movimiento
+            )
+            #checar si está chocando contra enemigos
+            #(Eso hay que hacerlo, no está hecho)
+
+            #Checar si se salió de los límites:
+            if (posiciones_bala[i][0] > 1 or posiciones_bala[i][0] < -1 or 
+                posiciones_bala[i][1] > 1 or posiciones_bala[i][1] < -1):
+                disparando[i] = False
 
 def actualizar_tirangulo(tiempo_delta):
     global angulo_triangulo
     global posicion_triangulo
     global disparando
     global angulo_bala
+    global estado_anterior_espacio
     #Leer los estados de las teclas que queremos
     estado_tecla_arriba = glfw.get_key(window, glfw.KEY_UP)
     estado_tecla_abajo = glfw.get_key(window, glfw.KEY_DOWN)
@@ -55,11 +66,15 @@ def actualizar_tirangulo(tiempo_delta):
     estado_tecla_izquierda = glfw.get_key(window, glfw.KEY_LEFT)
     estado_tecla_espacio = glfw.get_key(window, glfw.KEY_SPACE)
 
-    if estado_tecla_espacio == glfw.PRESS and not disparando:
-        disparando = True
-        posicion_bala[0] = posicion_triangulo[0]
-        posicion_bala[1] = posicion_triangulo[1]
-        angulo_bala = angulo_triangulo + fase
+    if (estado_tecla_espacio == glfw.PRESS and 
+        estado_anterior_espacio == glfw.RELEASE):
+        for i in range(3):
+            if not disparando[i]:
+                disparando[i] = True
+                posiciones_bala[i][0] = posicion_triangulo[0]
+                posiciones_bala[i][1] = posicion_triangulo[1]
+                angulo_bala[i] = angulo_triangulo + fase
+                break
 
     #Revisamos estados y realizamos acciones
     cantidad_movimiento = velocidad * tiempo_delta
@@ -82,6 +97,7 @@ def actualizar_tirangulo(tiempo_delta):
         angulo_triangulo = angulo_triangulo - cantidad_rotacion
         if angulo_triangulo < 0.0:
             angulo_triangulo = angulo_triangulo + 360.0
+    estado_anterior_espacio = estado_tecla_espacio
 
 def actualizar():
     global tiempo_anterior
@@ -185,19 +201,20 @@ def draw_cuadrado():
     glPopMatrix()
 
 def draw_bala():
-    global posicion_bala
+    global posiciones_bala
     global disparando
-    if disparando:
-        glPushMatrix()
-        glTranslatef(posicion_bala[0], posicion_bala[1], 0.0)
-        glBegin(GL_QUADS)
-        glColor3f(0.0, 0.0, 0.0)
-        glVertex3f(-0.01,0.01,0.0)
-        glVertex3f(0.01,0.01,0.0)
-        glVertex3f(0.01,-0.01,0.0)
-        glVertex3f(-0.01,-0.01,0.0)
-        glEnd()
-        glPopMatrix()
+    for i in range(3):
+        if disparando[i]:
+            glPushMatrix()
+            glTranslatef(posiciones_bala[i][0], posiciones_bala[i][1], 0.0)
+            glBegin(GL_QUADS)
+            glColor3f(0.0, 0.0, 0.0)
+            glVertex3f(-0.01,0.01,0.0)
+            glVertex3f(0.01,0.01,0.0)
+            glVertex3f(0.01,-0.01,0.0)
+            glVertex3f(-0.01,-0.01,0.0)
+            glEnd()
+            glPopMatrix()
 
 def draw():
     draw_triangulo()
